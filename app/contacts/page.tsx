@@ -102,7 +102,7 @@ export default function ContactsPage() {
           <div className="bg-slate-900/60 rounded-2xl p-6 border border-slate-700 space-y-3">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center pb-3 border-b border-slate-700">
               <span className="text-slate-400">Полное наименование</span>
-              <span className="text-white font-medium">Махмутов Альберт Маратович</span>
+              <span className="text-white font-medium">Махмутов М.А.</span>
             </div>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center pb-3 border-b border-slate-700">
               <span className="text-slate-400">Статус</span>
