@@ -376,13 +376,17 @@ export default function Home() {
       </footer>
 
       {/* ====== МОДАЛКА ОПЛАТЫ ====== */}
-      {showPayment && (
-        <PaymentModal
-          amount={35}
-          onClose={() => setShowPayment(false)}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
+     // СТАЛО:
+{showPayment && (
+  <PaymentModal
+    amount={35}
+    essay={essay}
+    topic={topic}
+    sourceText={sourceText}
+    onClose={() => setShowPayment(false)}
+    onSuccess={handlePaymentSuccess}
+  />
+)}
     </main>
   );
 }

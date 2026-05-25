@@ -4,11 +4,21 @@ import { useState } from "react";
 
 interface PaymentModalProps {
   amount: number;
+  essay: string;
+  topic: string;
+  sourceText: string;
   onClose: () => void;
-  onSuccess: (email: string) => void;  // 👈 ИЗМЕНЕНО: теперь передаём email
+  onSuccess: (email: string) => void;
 }
 
-export default function PaymentModal({ amount, onClose, onSuccess }: PaymentModalProps) {
+export default function PaymentModal({
+  amount,
+  essay,
+  topic,
+  sourceText,
+  onClose,
+  onSuccess,
+}: PaymentModalProps) {
   const [email, setEmail] = useState("");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -22,14 +32,30 @@ export default function PaymentModal({ amount, onClose, onSuccess }: PaymentModa
     setError("");
     setProcessing(true);
 
-    // TODO: Здесь будет интеграция с ЮKassa
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+    try {
+      // Создаём платёж в ЮКасса
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, amount, essay, topic, sourceText }),
+      });
 
-    setProcessing(false);
-    onSuccess(email);  // 👈 ИЗМЕНЕНО: передаём email в родителя
+      const data = await res.json();
+
+      if (!data.success || !data.confirmationUrl) {
+        setError(data.error || "Не удалось создать платёж");
+        setProcessing(false);
+        return;
+      }
+
+      // Редиректим на страницу оплаты ЮКасса
+      window.location.href = data.confirmationUrl;
+
+    } catch (e: any) {
+      setError("Ошибка сети: " + e.message);
+      setProcessing(false);
+    }
   };
-
- 
 
   return (
     <div
@@ -71,7 +97,7 @@ export default function PaymentModal({ amount, onClose, onSuccess }: PaymentModa
           className="w-full bg-slate-900/60 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-2 transition disabled:opacity-50"
         />
         <p className="text-xs text-slate-500 mb-4">
-          На этот email мы пришлём чек об оплате и результат проверки
+          На этот email мы пришлём чек и результат проверки
         </p>
 
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
@@ -89,14 +115,12 @@ export default function PaymentModal({ amount, onClose, onSuccess }: PaymentModa
             disabled={processing}
             className="flex-1 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 disabled:opacity-50 transition"
           >
-            {processing ? "⏳ Обработка..." : `Оплатить ${amount} ₽`}
+            {processing ? "⏳ Создаём платёж..." : `Оплатить ${amount} ₽`}
           </button>
         </div>
 
         <p className="text-center text-xs text-slate-500 mt-4">
           🔒 Платёж защищён. Сервис работает по 54-ФЗ.
-          <br />
-          После оплаты вы получите фискальный чек.
         </p>
       </div>
     </div>
