@@ -24,14 +24,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ Сохраняем данные сочинения во временное хранилище (KV или просто в БД)
-    // Но так как у нас нет БД — сохраняем essay/topic/sourceText в Redis или
-    // передаём только email, а данные берём из сессии/куки на клиенте.
-    
-    // Решение: сохраняем данные в отдельный API-эндпоинт с уникальным ID
     const sessionId = uuidv4();
-    
-    // Сохраняем сочинение во временное хранилище
+
+    // Сохраняем данные сессии
     const saveRes = await fetch(`${appUrl}/api/payment/save-session`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -54,7 +49,8 @@ export async function POST(req: NextRequest) {
       },
       confirmation: {
         type: "redirect",
-        return_url: `${appUrl}/payment/success`,
+        // ✅ session_id передаётся в URL возврата
+        return_url: `${appUrl}/payment/success?session_id=${sessionId}`,
       },
       capture: true,
       description: "Проверка сочинения ЕГЭ",
@@ -77,9 +73,8 @@ export async function POST(req: NextRequest) {
         ],
       },
       metadata: {
-        // ✅ Только короткие значения — максимум 256 символов каждое
         email: email.substring(0, 256),
-        session_id: sessionId, // UUID = 36 символов, всё ок
+        session_id: sessionId,
       },
     };
 

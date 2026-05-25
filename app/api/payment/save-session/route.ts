@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-// Папка для хранения сессий
 const SESSIONS_DIR = path.join("/tmp", "ege-sessions");
 
-// Создаём папку если её нет
 function ensureDir() {
   if (!fs.existsSync(SESSIONS_DIR)) {
     fs.mkdirSync(SESSIONS_DIR, { recursive: true });
   }
 }
 
-// ✅ СОХРАНИТЬ сессию
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, email, essay, topic, sourceText } = await req.json();
@@ -27,18 +24,20 @@ export async function POST(req: NextRequest) {
     ensureDir();
 
     const filePath = path.join(SESSIONS_DIR, `${sessionId}.json`);
-    
-    const sessionData = {
-      email,
-      essay,
-      topic,
-      sourceText,
-      createdAt: Date.now(),
-    };
 
-    fs.writeFileSync(filePath, JSON.stringify(sessionData), "utf-8");
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify({
+        email,
+        essay,
+        topic,
+        sourceText,
+        createdAt: Date.now(),
+      }),
+      "utf-8"
+    );
 
-    console.log(`✅ Сессия сохранена в файл: ${filePath}`);
+    console.log(`✅ Сессия сохранена: ${sessionId}`);
     return NextResponse.json({ success: true });
 
   } catch (error: any) {
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ✅ ПОЛУЧИТЬ сессию
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -67,7 +65,6 @@ export async function GET(req: NextRequest) {
 
     const filePath = path.join(SESSIONS_DIR, `${sessionId}.json`);
 
-    // Проверяем существует ли файл
     if (!fs.existsSync(filePath)) {
       console.error(`❌ Файл сессии не найден: ${filePath}`);
       return NextResponse.json(
@@ -76,11 +73,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Читаем данные
     const rawData = fs.readFileSync(filePath, "utf-8");
     const data = JSON.parse(rawData);
 
-    // Удаляем файл — он одноразовый
+    // Удаляем файл после чтения — одноразовый
     fs.unlinkSync(filePath);
 
     console.log(`✅ Сессия прочитана и удалена: ${sessionId}`);
