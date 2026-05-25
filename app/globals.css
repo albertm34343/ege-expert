@@ -12,150 +12,42 @@ body {
   min-height: 100vh;
 }
 
-/* ========== ФОНОВЫЕ ЧАСТИЦЫ ========== */
+/* ========== ФОН — статичный красивый градиент ========== */
 .animated-gradient {
   position: relative;
-  background: linear-gradient(
-    125deg,
-    #0d0221 0%,
-    #1a0533 10%,
-    #0f0c29 20%,
-    #1b0a4f 30%,
-    #2d1b69 40%,
-    #4a1580 50%,
-    #2d1b69 60%,
-    #1a0a3e 70%,
-    #0f1744 80%,
-    #1a0533 90%,
-    #0d0221 100%
-  );
-  background-size: 600% 600%;
-  animation: gradient-shift 12s ease infinite;
-  overflow: hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%, rgba(88, 28, 235, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 0% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 100% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #0d0520 0%, #0a0a1a 40%, #080d1f 100%);
 }
 
-/* Псевдоэлемент — дополнительный слой переливания */
-.animated-gradient::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(
-      ellipse 80% 60% at 20% 30%,
-      rgba(139, 92, 246, 0.18) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse 60% 80% at 80% 70%,
-      rgba(236, 72, 153, 0.15) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse 70% 50% at 50% 10%,
-      rgba(99, 102, 241, 0.12) 0%,
-      transparent 60%
-    );
-  animation: orbs-move 18s ease-in-out infinite alternate;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Псевдоэлемент — мерцающие звёзды/блики */
-.animated-gradient::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 15% 25%, rgba(255,255,255,0.25) 0%, transparent 100%),
-    radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.2) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 45% 75%, rgba(255,255,255,0.15) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.15) 0%, transparent 100%),
-    radial-gradient(2px 2px at 60% 85%, rgba(167,139,250,0.3) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 10% 80%, rgba(236,72,153,0.25) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 55%, rgba(99,102,241,0.3) 0%, transparent 100%);
-  animation: stars-twinkle 6s ease-in-out infinite alternate;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Все дочерние элементы поверх фона */
+/* Все дочерние элементы поверх курсорного свечения */
 .animated-gradient > * {
   position: relative;
   z-index: 1;
 }
 
-/* ========== АНИМАЦИИ ФОНА ========== */
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 0%;
-  }
-  25% {
-    background-position: 100% 30%;
-  }
-  50% {
-    background-position: 80% 100%;
-  }
-  75% {
-    background-position: 20% 80%;
-  }
-  100% {
-    background-position: 0% 0%;
-  }
-}
-
-@keyframes orbs-move {
-  0% {
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(139,92,246,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 80% at 80% 70%, rgba(236,72,153,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 50% at 50% 10%, rgba(99,102,241,0.12) 0%, transparent 60%);
-  }
-  33% {
-    background:
-      radial-gradient(ellipse 70% 70% at 70% 20%, rgba(167,139,250,0.2) 0%, transparent 60%),
-      radial-gradient(ellipse 80% 60% at 10% 80%, rgba(236,72,153,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 60% at 90% 50%, rgba(79,70,229,0.15) 0%, transparent 60%);
-  }
-  66% {
-    background:
-      radial-gradient(ellipse 90% 50% at 50% 60%, rgba(124,58,237,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 90% at 90% 20%, rgba(244,114,182,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 70% at 20% 90%, rgba(99,102,241,0.12) 0%, transparent 60%);
-  }
-  100% {
-    background:
-      radial-gradient(ellipse 80% 60% at 30% 50%, rgba(139,92,246,0.2) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 70% at 70% 90%, rgba(236,72,153,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse 80% 50% at 10% 20%, rgba(99,102,241,0.15) 0%, transparent 60%);
-  }
-}
-
-@keyframes stars-twinkle {
-  0%   { opacity: 0.4; transform: scale(1); }
-  50%  { opacity: 1;   transform: scale(1.05); }
-  100% { opacity: 0.6; transform: scale(0.98); }
-}
-
 /* ========== СТЕКЛЯННЫЙ ЭФФЕКТ ========== */
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* ========== КНОПКИ — СУПЕР ЭФФЕКТЫ ========== */
+/* ========== КНОПКИ ========== */
 .glow-button {
   position: relative;
   box-shadow:
-    0 0 20px rgba(139, 92, 246, 0.4),
+    0 0 20px rgba(139, 92, 246, 0.35),
     0 4px 15px rgba(0, 0, 0, 0.3);
-  transition:
-    all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
+  isolation: isolate;
 }
 
 /* Блик-волна при hover */
@@ -169,18 +61,19 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.18) 50%,
     transparent 100%
   );
   transition: left 0.5s ease;
   z-index: 1;
+  pointer-events: none;
 }
 
 .glow-button:hover::before {
   left: 100%;
 }
 
-/* Пульсирующий ореол */
+/* Радужный ореол при hover */
 .glow-button::after {
   content: "";
   position: absolute;
@@ -207,8 +100,8 @@ body {
 
 .glow-button:hover {
   box-shadow:
-    0 0 40px rgba(139, 92, 246, 0.7),
-    0 0 80px rgba(236, 72, 153, 0.3),
+    0 0 40px rgba(139, 92, 246, 0.65),
+    0 0 80px rgba(236, 72, 153, 0.25),
     0 8px 25px rgba(0, 0, 0, 0.4);
   transform: translateY(-3px) scale(1.02);
 }
@@ -216,8 +109,8 @@ body {
 .glow-button:active {
   transform: translateY(0px) scale(0.98);
   box-shadow:
-    0 0 20px rgba(139, 92, 246, 0.5),
-    0 2px 10px rgba(0, 0, 0, 0.3);
+    0 0 15px rgba(139, 92, 246, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.1s ease;
 }
 
@@ -246,7 +139,8 @@ body {
 }
 
 /* ========== ШРИФТЫ ========== */
-textarea, input {
+textarea,
+input {
   font-family: var(--font-inter), sans-serif;
 }
 
