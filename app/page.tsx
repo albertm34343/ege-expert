@@ -30,7 +30,7 @@ export default function Home() {
     return { color: "text-green-400", label: `✅ Объём в норме (150+ слов)` };
   }, [wordCount]);
 
-  const handlePayClick = () => {
+ const handlePayClick = () => {
     if (!topic.trim() || !essay.trim() || !sourceText.trim()) {
       alert("Пожалуйста, заполните все три поля: исходный текст, тему и сочинение");
       return;
@@ -41,6 +41,10 @@ export default function Home() {
       );
       if (!confirmed) return;
     }
+    // Сохраняем данные перед переходом на оплату
+    localStorage.setItem("ege_topic", topic);
+    localStorage.setItem("ege_essay", essay);
+    localStorage.setItem("ege_sourceText", sourceText);
     setShowPayment(true);
   };
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { generatePDF } from "@/lib/generatePDF";
 
 type Status = "loading" | "checking" | "done" | "error";
@@ -16,213 +17,179 @@ function PaymentSuccessContent() {
   const [essay, setEssay] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    if (!sessionId) {
+    const savedTopic = localStorage.getItem("ege_topic") || "";
+    const savedEssay = localStorage.getItem("ege_essay") || "";
+    const savedSourceText = localStorage.getItem("ege_sourceText") || "";
+    const savedEmail = localStorage.getItem("ege_email") || "";
+
+    setTopic(savedTopic);
+    setEssay(savedEssay);
+    setSourceText(savedSourceText);
+    setUserEmail(savedEmail);
+
+    if (!savedEssay || !savedTopic || !savedSourceText) {
       setStatus("error");
       setErrorMsg(
-        "Не найден идентификатор сессии. Результат будет отправлен на ваш email."
+        "Данные сочинения не найдены в браузере. Если оплата прошла — результат придёт на email."
       );
       return;
     }
 
     setStatus("checking");
 
-    fetch(`/api/payment/check-result?session_id=${sessionId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setResult(data.result);
-          setTopic(data.topic);
-          setEssay(data.essay);
-          setSourceText(data.sourceText);
-          setStatus("done");
-        } else {
-          setErrorMsg(
-            data.error || "Ошибка проверки. Результат придёт на email."
-          );
+    const runCheck = async () => {
+      try {
+        const res = await fetch("/api/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: savedTopic,
+            essay: savedEssay,
+            sourceText: savedSourceText,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setErrorMsg("Ошибка проверки: " + data.error);
           setStatus("error");
+          return;
         }
-      })
-      .catch((e) => {
+
+        setResult(data.result);
+        setStatus("done");
+
+        // Очищаем localStorage
+        localStorage.removeItem("ege_topic");
+        localStorage.removeItem("ege_essay");
+        localStorage.removeItem("ege_sourceText");
+        localStorage.removeItem("ege_email");
+
+        // Отправляем email
+        if (savedEmail) {
+          try {
+            await fetch("/api/send-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: savedEmail,
+                topic: savedTopic,
+                essay: savedEssay,
+                sourceText: savedSourceText,
+                result: data.result,
+              }),
+            });
+          } catch (e) {
+            console.warn("Не удалось отправить email:", e);
+          }
+        }
+      } catch (e: any) {
         setErrorMsg("Ошибка сети: " + e.message);
         setStatus("error");
-      });
+      }
+    };
+
+    runCheck();
   }, [sessionId]);
 
-  return (
-    <main className="animated-gradient min-h-screen text-slate-100 px-4 py-12">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Шапка */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">
-            {status === "done"
-              ? "✅"
-              : status === "error"
-              ? "⚠️"
-              : "⏳"}
+  if (status === "loading" || status === "checking") {
+    return (
+      <main className="animated-gradient min-h-screen flex items-center justify-center text-slate-100">
+        <div className="text-center px-4">
+          <div className="text-6xl mb-6">⚙️</div>
+          <h2 className="font-serif text-3xl font-bold text-white mb-4">
+            {status === "loading" ? "Загрузка..." : "🔍 Проверяю сочинение..."}
+          </h2>
+          {status === "checking" && (
+            <p className="text-slate-300 text-lg mb-8">
+              Это займёт около 60 секунд. Не закрывайте страницу!
+            </p>
+          )}
+          <div className="w-64 mx-auto bg-slate-800 rounded-full h-2 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse w-full" />
           </div>
-          <h1 className="font-serif text-3xl font-bold text-white mb-2">
-            {status === "loading" && "Подготовка..."}
-            {status === "checking" && "Проверяем ваше сочинение..."}
-            {status === "done" && "Готово! Результат проверки"}
-            {status === "error" && "Не удалось загрузить результат"}
-          </h1>
-          <p className="text-slate-400 text-sm">
-            {status === "checking" &&
-              "AI анализирует по 12 критериям ФИПИ. Это займёт около 60 секунд — не закрывайте страницу."}
-            {status === "done" &&
-              "Результат также отправлен на ваш email."}
-            {status === "error" &&
-              "Результат будет отправлен на ваш email в течение нескольких минут."}
+        </div>
+      </main>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <main className="animated-gradient min-h-screen flex items-center justify-center text-slate-100 px-4">
+        <div className="glass-card rounded-3xl p-8 md:p-10 max-w-lg w-full text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="font-serif text-2xl font-bold text-yellow-300 mb-4">
+            Что-то пошло не так
+          </h2>
+          <p className="text-slate-300 mb-3">{errorMsg}</p>
+          <p className="text-slate-400 text-sm mb-6">
+            Проверьте папку «Спам». Если письмо не пришло в течение 10 минут — напишите нам:{" "}
+            <a
+              href="mailto:malbert333j@mail.ru"
+              className="text-purple-400 underline hover:text-purple-300"
+            >
+              malbert333j@mail.ru
+            </a>
           </p>
+          <Link
+            href="/"
+            className="inline-block px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 transition"
+          >
+            ← На главную
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="animated-gradient min-h-screen text-slate-100">
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <div className="text-5xl mb-4">✅</div>
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-3">
+            Проверка завершена!
+          </h1>
+          {userEmail && (
+            <p className="text-slate-300">
+              Результат также отправлен на{" "}
+              <span className="text-purple-300 font-semibold">{userEmail}</span>
+            </p>
+          )}
         </div>
 
-        {/* Лоадер */}
-        {(status === "loading" || status === "checking") && (
-          <div className="glass-card rounded-3xl p-12 text-center">
-            <div className="flex flex-col items-center gap-6">
-
-              {/* Спиннер */}
-              <div className="relative w-20 h-20">
-                <div className="absolute inset-0 rounded-full border-4 border-purple-500/20" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin" />
-              </div>
-
-              <div className="space-y-1 text-center">
-                <p className="text-white font-semibold text-lg">
-                  🔍 AI проверяет сочинение...
-                </p>
-                <p className="text-slate-400 text-sm">
-                  Двухпроходная проверка по критериям ФИПИ 2025
-                </p>
-              </div>
-
-              {/* Шаги */}
-              <div className="w-full max-w-sm space-y-3 mt-2">
-                {[
-                  { label: "✅ Платёж подтверждён", done: true },
-                  {
-                    label: "🔍 Первый проход — младший эксперт",
-                    done: status === "checking",
-                  },
-                  { label: "🔍 Второй проход — старший эксперт", done: false },
-                  { label: "📊 Формирование результата", done: false },
-                ].map((step, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 transition-all ${
-                        step.done
-                          ? "bg-green-500 text-white"
-                          : "bg-slate-700 text-slate-500"
-                      }`}
-                    >
-                      {step.done ? "✓" : i + 1}
-                    </div>
-                    <span
-                      className={`text-sm transition-all ${
-                        step.done ? "text-slate-200" : "text-slate-500"
-                      }`}
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-slate-500 text-xs mt-2">
-                ⏱ Пожалуйста, не закрывайте эту страницу
-              </p>
-            </div>
+        <div className="glass-card rounded-3xl p-8 md:p-10 shadow-2xl">
+          <h2 className="font-serif text-3xl font-bold mb-6 text-white flex items-center gap-3">
+            📊 Результат проверки
+          </h2>
+          <div className="whitespace-pre-wrap text-slate-200 leading-relaxed font-mono text-sm bg-slate-950/40 p-6 rounded-2xl border border-slate-800">
+            {result}
           </div>
-        )}
-
-        {/* Ошибка */}
-        {status === "error" && (
-          <div className="glass-card rounded-3xl p-8 text-center border border-yellow-500/20">
-            <div className="text-4xl mb-4">📧</div>
-            <p className="text-yellow-300 font-semibold mb-3">
-              {errorMsg}
-            </p>
-            <p className="text-slate-400 text-sm mb-6">
-              Проверьте папку «Спам» — письмо с результатом могло попасть туда.
-              <br />
-              Если письмо не пришло в течение 10 минут — напишите нам на{" "}
-              <a
-                href="mailto:malbert333j@mail.ru"
-                className="text-purple-400 underline"
-              >
-                malbert333j@mail.ru
-              </a>
-            </p>
-            <a
+          <button
+            onClick={async () =>
+              await generatePDF({ topic, sourceText, essay, analysis: result })
+            }
+            className="w-full mt-6 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500 transition-all glow-button flex items-center justify-center gap-2"
+          >
+            📥 Скачать результат в PDF
+          </button>
+          <div className="mt-4 text-center">
+            <Link
               href="/"
-              className="inline-block py-3 px-8 rounded-xl font-semibold text-white
-              bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600
-              hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 transition"
+              className="text-purple-400 hover:text-purple-300 transition text-sm underline"
             >
-              ← На главную
-            </a>
+              ← Проверить ещё одно сочинение
+            </Link>
           </div>
-        )}
-
-        {/* Результат */}
-        {status === "done" && result && (
-          <div className="glass-card rounded-3xl p-8 md:p-10 shadow-2xl">
-            <h2 className="font-serif text-2xl font-bold mb-6 text-white flex items-center gap-3">
-              📊 Результат проверки
-            </h2>
-
-            <div
-              className="whitespace-pre-wrap text-slate-200 leading-relaxed
-              font-mono text-sm bg-slate-950/40 p-6 rounded-2xl
-              border border-slate-800 mb-6 overflow-auto max-h-[600px]"
-            >
-              {result}
-            </div>
-
-            {/* Кнопки */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={async () =>
-                  await generatePDF({
-                    topic,
-                    sourceText,
-                    essay,
-                    analysis: result,
-                  })
-                }
-                className="flex-1 py-4 rounded-xl font-semibold text-white
-                bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600
-                hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500
-                transition-all flex items-center justify-center gap-2"
-              >
-                📥 Скачать результат в PDF
-              </button>
-
-              <a
-                href="/"
-                className="flex-1 py-4 rounded-xl font-semibold text-white
-                bg-slate-700 hover:bg-slate-600 transition-all
-                flex items-center justify-center gap-2 text-center"
-              >
-                ← Проверить ещё одно сочинение
-              </a>
-            </div>
-
-            <p className="text-center text-sm text-slate-500 mt-4">
-              📧 Результат также отправлен на ваш email
-            </p>
-          </div>
-        )}
-
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
 
-// Suspense нужен для useSearchParams в Next.js 13+
 export default function PaymentSuccessPage() {
   return (
     <Suspense
