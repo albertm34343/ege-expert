@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
-// Временное хранилище в памяти сервера
-// Для продакшена лучше использовать Redis/Vercel KV
-const sessions = new Map<string, {
-  email: string;
-  essay: string;
-  topic: string;
-  sourceText: string;
-  createdAt: number;
-}>();
+// Папка для хранения сессий
+const SESSIONS_DIR = path.join("/tmp", "ege-sessions");
 
-// Очищаем старые сессии (старше 2 часов)
-function cleanupSessions() {
-  const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
-  for (const [key, value] of sessions.entries()) {
-    if (value.createdAt < twoHoursAgo) {
-      sessions.delete(key);
-    }
+// Создаём папку если её нет
+function ensureDir() {
+  if (!fs.existsSync(SESSIONS_DIR)) {
+    fs.mkdirSync(SESSIONS_DIR, { recursive: true });
   }
 }
 
+// ✅ СОХРАНИТЬ сессию
 export async function POST(req: NextRequest) {
   try {
     const { sessionId, email, essay, topic, sourceText } = await req.json();
@@ -31,21 +24,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    cleanupSessions();
+    ensureDir();
 
-    sessions.set(sessionId, {
+    const filePath = path.join(SESSIONS_DIR, `${sessionId}.json`);
+    
+    const sessionData = {
       email,
       essay,
       topic,
       sourceText,
       createdAt: Date.now(),
-    });
+    };
 
-    console.log(`✅ Сессия сохранена: ${sessionId}`);
+    fs.writeFileSync(filePath, JSON.stringify(sessionData), "utf-8");
 
+    console.log(`✅ Сессия сохранена в файл: ${filePath}`);
     return NextResponse.json({ success: true });
 
   } catch (error: any) {
+    console.error("❌ Ошибка сохранения сессии:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -53,6 +50,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// ✅ ПОЛУЧИТЬ сессию
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -65,18 +63,31 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const session = sessions.get(sessionId);
+    ensureDir();
 
-    if (!session) {
+    const filePath = path.join(SESSIONS_DIR, `${sessionId}.json`);
+
+    // Проверяем существует ли файл
+    if (!fs.existsSync(filePath)) {
+      console.error(`❌ Файл сессии не найден: ${filePath}`);
       return NextResponse.json(
         { success: false, error: "Сессия не найдена или устарела" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ success: true, ...session });
+    // Читаем данные
+    const rawData = fs.readFileSync(filePath, "utf-8");
+    const data = JSON.parse(rawData);
+
+    // Удаляем файл — он одноразовый
+    fs.unlinkSync(filePath);
+
+    console.log(`✅ Сессия прочитана и удалена: ${sessionId}`);
+    return NextResponse.json({ success: true, ...data });
 
   } catch (error: any) {
+    console.error("❌ Ошибка чтения сессии:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
