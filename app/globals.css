@@ -1,149 +1,91 @@
 @import "tailwindcss";
 
+
 :root {
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-playfair);
+--font-sans: var(--font-inter);
+--font-serif: var(--font-playfair);
 }
+
 
 body {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  background: #0a0a1a;
-  color: #e5e7eb;
-  min-height: 100vh;
+font-family: var(--font-inter), system-ui, sans-serif;
+background: #0a0a1a;
+color: #e5e7eb;
+min-height: 100vh;
 }
 
-/* ========== ФОН — статичный красивый градиент ========== */
+
+/* Анимация плавающего градиента на фоне */
+@keyframes gradient-shift {
+0%, 100% {
+background-position: 0% 50%;
+}
+50% {
+background-position: 100% 50%;
+}
+}
+
+
 .animated-gradient {
-  position: relative;
-  background:
-    radial-gradient(ellipse 120% 80% at 50% -10%, rgba(88, 28, 235, 0.35) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 60% at 0% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 60% at 100% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
-    linear-gradient(180deg, #0d0520 0%, #0a0a1a 40%, #080d1f 100%);
+background: linear-gradient(
+135deg,
+#0f0c29 0%,
+#1a1147 25%,
+#2d1b69 50%,
+#1a1147 75%,
+#0f0c29 100%
+);
+background-size: 400% 400%;
+animation: gradient-shift 15s ease infinite;
 }
 
-/* Все дочерние элементы поверх курсорного свечения */
-.animated-gradient > * {
-  position: relative;
-  z-index: 1;
-}
 
-/* ========== СТЕКЛЯННЫЙ ЭФФЕКТ ========== */
+/* Стеклянный эффект для карточек */
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
+border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ========== КНОПКИ ========== */
+
+/* Свечение для кнопок */
 .glow-button {
-  position: relative;
-  box-shadow:
-    0 0 20px rgba(139, 92, 246, 0.35),
-    0 4px 15px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: hidden;
-  isolation: isolate;
+box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+transition: all 0.3s ease;
 }
 
-/* Блик-волна при hover */
-.glow-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.18) 50%,
-    transparent 100%
-  );
-  transition: left 0.5s ease;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.glow-button:hover::before {
-  left: 100%;
-}
-
-/* Радужный ореол при hover */
-.glow-button::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  background: linear-gradient(
-    135deg,
-    #6366f1,
-    #8b5cf6,
-    #ec4899,
-    #8b5cf6,
-    #6366f1
-  );
-  background-size: 300% 300%;
-  border-radius: inherit;
-  z-index: -1;
-  opacity: 0;
-  animation: border-spin 3s linear infinite;
-  transition: opacity 0.3s ease;
-}
-
-.glow-button:hover::after {
-  opacity: 1;
-}
 
 .glow-button:hover {
-  box-shadow:
-    0 0 40px rgba(139, 92, 246, 0.65),
-    0 0 80px rgba(236, 72, 153, 0.25),
-    0 8px 25px rgba(0, 0, 0, 0.4);
-  transform: translateY(-3px) scale(1.02);
+box-shadow: 0 0 50px rgba(139, 92, 246, 0.8);
+transform: translateY(-2px);
 }
 
-.glow-button:active {
-  transform: translateY(0px) scale(0.98);
-  box-shadow:
-    0 0 15px rgba(139, 92, 246, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.1s ease;
-}
 
-@keyframes border-spin {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* ========== СКРОЛЛБАР ========== */
+/* Кастомный скроллбар */
 ::-webkit-scrollbar {
-  width: 8px;
+width: 10px;
 }
+
 
 ::-webkit-scrollbar-track {
-  background: #0a0a1a;
+background: #0a0a1a;
 }
+
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #6366f1, #8b5cf6, #ec4899);
-  border-radius: 5px;
+background: linear-gradient(180deg, #6366f1, #8b5cf6);
+border-radius: 5px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #818cf8, #a78bfa, #f472b6);
+
+/* Стили для textarea и input */
+textarea, input {
+font-family: var(--font-inter), sans-serif;
 }
 
-/* ========== ШРИФТЫ ========== */
-textarea,
-input {
-  font-family: var(--font-inter), sans-serif;
-}
 
+/* Заголовки — Playfair Display */
 .font-serif {
-  font-family: var(--font-playfair), serif;
+font-family: var(--font-playfair), serif;
 }
