@@ -24,6 +24,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ✅ Сохраняем данные сочинения во временное хранилище (KV или просто в БД)
+    // Но так как у нас нет БД — сохраняем essay/topic/sourceText в Redis или
+    // передаём только email, а данные берём из сессии/куки на клиенте.
+    
+    // Решение: сохраняем данные в отдельный API-эндпоинт с уникальным ID
+    const sessionId = uuidv4();
+    
+    // Сохраняем сочинение во временное хранилище
+    const saveRes = await fetch(`${appUrl}/api/payment/save-session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, email, essay, topic, sourceText }),
+    });
+
+    if (!saveRes.ok) {
+      return NextResponse.json(
+        { success: false, error: "Ошибка сохранения сессии" },
+        { status: 500 }
+      );
+    }
+
     const idempotenceKey = uuidv4();
 
     const paymentData = {
@@ -56,10 +77,9 @@ export async function POST(req: NextRequest) {
         ],
       },
       metadata: {
-        email,
-        essay: essay.substring(0, 1000),
-        topic: topic.substring(0, 500),
-        sourceText: sourceText.substring(0, 1000),
+        // ✅ Только короткие значения — максимум 256 символов каждое
+        email: email.substring(0, 256),
+        session_id: sessionId, // UUID = 36 символов, всё ок
       },
     };
 
@@ -92,6 +112,7 @@ export async function POST(req: NextRequest) {
       paymentId: data.id,
       confirmationUrl: data.confirmation.confirmation_url,
     });
+
   } catch (error: any) {
     console.error("❌ Ошибка создания платежа:", error);
     return NextResponse.json(
